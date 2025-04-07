@@ -236,4 +236,11 @@
     </resources>
   </build>
 
+  <distributionManagement>
+    <site>
+      <id>site</id>
+      <url>file://${project.build.directory}/site</url>
+    </site>
+  </distributionManagement>
+
 </project>

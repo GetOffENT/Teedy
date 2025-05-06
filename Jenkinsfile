@@ -15,7 +15,7 @@ Repository's name
             steps {
                 checkout scmGit(
                     branches:
- [[name: '*/master']],
+ [[name: '*/Jenkins-docker']],
                     extensions: [],
                     userRemoteConfigs: [[url: 'https://github.com/GetOffENT/Teedy.git']]
 // your github Repository

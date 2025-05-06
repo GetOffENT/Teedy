@@ -6,7 +6,7 @@
         DOCKER_HUB_CREDENTIALS = credentials('dockerhub_credentials') // Docker
 Hub credentials ID store in Jenkins
 // Docker Hub Repository's name
-DOCKER_IMAGE = 'xx/teedy-app' // your Docker Hub user name and
+DOCKER_IMAGE = 'yanko7019/teedy' // your Docker Hub user name and
 Repository's name
         DOCKER_TAG = "${env.BUILD_NUMBER}" // use build number as tag
     }
@@ -17,7 +17,7 @@ Repository's name
                     branches:
  [[name: '*/master']],
                     extensions: [],
-                    userRemoteConfigs: [[url: 'https://github.com/xx/Teedy.git']]
+                    userRemoteConfigs: [[url: 'https://github.com/GetOffENT/Teedy.git']]
 // your github Repository
                 )
                 sh

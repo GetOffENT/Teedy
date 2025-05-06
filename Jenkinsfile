@@ -3,7 +3,7 @@
     environment {
 // define environment variable
 // Jenkins credentials configuration
-        DOCKER_HUB_CREDENTIALS = credentials('dockerhub_credentials') // Docker
+        DOCKER_HUB_CREDENTIALS = credentials('4') // Docker
 Hub credentials ID store in Jenkins
 // Docker Hub Repository's name
 DOCKER_IMAGE = 'yanko7019/teedy' // your Docker Hub user name and

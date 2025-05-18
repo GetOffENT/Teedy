@@ -11,13 +11,13 @@ import com.sismics.util.EnvironmentUtil;
 
 /**
  * Utilities to gain access to the storage directories used by the application.
- * 
+ *
  * @author jtremeaux
  */
 public class DirectoryUtil {
     /**
      * Returns the base data directory.
-     * 
+     *
      * @return Base data directory
      */
     public static Path getBaseDataDirectory() {
@@ -31,7 +31,7 @@ public class DirectoryUtil {
         } else {
             // We are in a webapp environment and nothing is specified, use the default directory for this OS
             if (EnvironmentUtil.isUnix()) {
-                baseDataDir = Paths.get("/var/docs");
+                baseDataDir = Paths.get("/home/selab/lab/lab04/docs");
             } if (EnvironmentUtil.isWindows()) {
                 baseDataDir = Paths.get(EnvironmentUtil.getWindowsAppData() + "\\Sismics\\Docs");
             } else if (EnvironmentUtil.isMacOs()) {
@@ -49,10 +49,10 @@ public class DirectoryUtil {
 
         return baseDataDir;
     }
-    
+
     /**
      * Returns the database directory.
-     * 
+     *
      * @return Database directory.
      */
     public static Path getDbDirectory() {
@@ -61,25 +61,25 @@ public class DirectoryUtil {
 
     /**
      * Returns the lucene indexes directory.
-     * 
+     *
      * @return Lucene indexes directory.
      */
     public static Path getLuceneDirectory() {
         return getDataSubDirectory("lucene");
     }
-    
+
     /**
      * Returns the storage directory.
-     * 
+     *
      * @return Storage directory.
      */
     public static Path getStorageDirectory() {
         return getDataSubDirectory("storage");
     }
-    
+
     /**
      * Returns the log directory.
-     * 
+     *
      * @return Log directory.
      */
     public static Path getLogDirectory() {
@@ -97,7 +97,7 @@ public class DirectoryUtil {
 
     /**
      * Returns a subdirectory of the base data directory
-     * 
+     *
      * @return Subdirectory
      */
     private static Path getDataSubDirectory(String subdirectory) {

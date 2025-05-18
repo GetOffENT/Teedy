@@ -9,6 +9,7 @@
 /.idea
 /.project
 *.iml
+data
 node_modules
 import_test
 teedy-importer-linux
@@ -19,3 +20,9 @@ docs/*
 
 #macos
 .DS_Store
+
+# 忽略所有目录下的target文件夹
+**/target/
+
+# 忽略所有.log后缀的文件
+*.log

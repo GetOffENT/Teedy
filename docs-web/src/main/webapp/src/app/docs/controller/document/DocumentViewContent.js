@@ -224,4 +224,19 @@ angular.module('docs').controller('DocumentViewContent', function ($scope, $root
       }
     })
   };
+
+  $scope.editImage = function (file) {
+    $uibModal.open({
+      templateUrl: 'partial/docs/file.image.edit.html',
+      controller: 'ImageEdit',
+      resolve: {
+        file: function () {
+          return angular.copy(file);
+        }
+      }
+    }).result.then(function (editedBlob) {
+      // 利用 uploadNewVersion 逻辑上传
+      $scope.uploadNewVersion([editedBlob], file);
+    });
+  };
 });

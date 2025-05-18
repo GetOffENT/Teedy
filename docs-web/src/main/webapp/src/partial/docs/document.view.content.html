@@ -132,6 +132,12 @@
                     {{ 'delete' | translate }}
                   </a>
                 </li>
+                <li ng-if="file.mimetype && file.mimetype.indexOf('image/') === 0">
+                  <a href ng-click="editImage(file)">
+                    <span class="fas fa-edit"></span>
+                    在线编辑
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
@@ -222,6 +228,12 @@
               <a href ng-click="deleteFile(file)">
                 <span class="fas fa-trash text-danger"></span>
                 {{ 'delete' | translate }}
+              </a>
+            </li>
+            <li ng-if="file.mimetype && file.mimetype.indexOf('image/') === 0">
+              <a href ng-click="editImage(file)">
+                <span class="fas fa-edit"></span>
+                在线编辑
               </a>
             </li>
           </ul>

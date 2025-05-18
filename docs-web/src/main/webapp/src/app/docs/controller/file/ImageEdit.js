@@ -46,6 +46,13 @@ angular.module('docs').controller('ImageEdit', function ($scope, $uibModalInstan
       };
       draw();
     };
+
+    canvas.ondblclick = function(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      $scope.showTextInput(x, y);
+    };
   };
 
   $scope.rotate = function () {
@@ -111,17 +118,50 @@ angular.module('docs').controller('ImageEdit', function ($scope, $uibModalInstan
     img.src = canvas.toDataURL();
   };
 
-  $scope.addText = function () {
-    draw(false);
-    historyStack.push(canvas.toDataURL());
-    draw();
-    let text = prompt("请输入要添加的文字：");
-    if (text) {
-      ctx.font = "30px Arial";
-      ctx.fillStyle = "red";
-      ctx.fillText(text, 20, 40);
-      img.src = canvas.toDataURL();
-    }
+  $scope.showTextInput = function(x, y) {
+    // 先移除已有输入框
+    let oldInput = document.getElementById('canvasTextInput');
+    if (oldInput) oldInput.parentNode.removeChild(oldInput);
+
+    // 创建textarea
+    let textarea = document.createElement('textarea');
+    textarea.id = 'canvasTextInput';
+    textarea.rows = 2;
+    textarea.style.position = 'absolute';
+    textarea.style.left = (canvas.offsetLeft + x) + 'px';
+    textarea.style.top = (canvas.offsetTop + y) + 'px';
+    textarea.style.border = '1px dashed #f00';
+    textarea.style.font = '30px Arial';
+    textarea.style.color = 'red';
+    textarea.style.background = 'transparent';
+    textarea.style.zIndex = 1000;
+    textarea.style.outline = 'none';
+    textarea.style.resize = 'none';
+    textarea.style.overflow = 'hidden';
+    textarea.style.padding = '2px';
+    textarea.style.lineHeight = '36px';
+
+    // 插入到canvas父节点
+    canvas.parentNode.appendChild(textarea);
+    textarea.focus();
+
+    // 只在失去焦点时提交内容
+    textarea.onblur = function() {
+      if (textarea.value.trim() !== '') {
+        draw(false); // 只画图片本身
+        historyStack.push(canvas.toDataURL());
+        draw(); // 恢复
+        ctx.font = "30px Arial";
+        ctx.fillStyle = "red";
+        // 支持多行
+        let lines = textarea.value.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+          ctx.fillText(lines[i], x, y + 30 + i * 36); // 36为行高
+        }
+        img.src = canvas.toDataURL();
+      }
+      textarea.parentNode.removeChild(textarea);
+    };
   };
 
   $scope.save = function () {

@@ -4,6 +4,7 @@ angular.module('docs').controller('ImageEdit', function ($scope, $uibModalInstan
   $scope.file = file;
   let canvas, ctx, img, angle = 0;
   let startX, startY, endX, endY, isSelecting = false, selectionRect = null;
+  let historyStack = [];
 
   $scope.init = function () {
     canvas = document.getElementById('imageEditorCanvas');
@@ -48,6 +49,11 @@ angular.module('docs').controller('ImageEdit', function ($scope, $uibModalInstan
   };
 
   $scope.rotate = function () {
+    // 存历史前，先只画图片本身
+    draw(false);
+    historyStack.push(canvas.toDataURL());
+    // 画面恢复
+    draw();
     angle = (angle + 90) % 360;
     // 旋转画布
     let tempCanvas = document.createElement('canvas');
@@ -72,22 +78,43 @@ angular.module('docs').controller('ImageEdit', function ($scope, $uibModalInstan
   };
 
   $scope.crop = function () {
+    draw(false); // 先只画图片本身到主canvas
+    historyStack.push(canvas.toDataURL());
+    draw(); // 恢复带虚线的画面
+
     if (!selectionRect || selectionRect.w === 0 || selectionRect.h === 0) {
       alert("请先用鼠标选择裁剪区域！");
       return;
     }
-    // 先只画图片本身，不画虚线
-    draw(false);
-    let imageData = ctx.getImageData(selectionRect.x, selectionRect.y, selectionRect.w, selectionRect.h);
+
+    // 新建一个临时canvas，只画图片本身
+    let tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    let tempCtx = tempCanvas.getContext('2d');
+    tempCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    // 从临时canvas上裁剪
+    let imageData = tempCtx.getImageData(selectionRect.x, selectionRect.y, selectionRect.w, selectionRect.h);
+
     canvas.width = selectionRect.w;
     canvas.height = selectionRect.h;
     ctx.putImageData(imageData, 0, 0);
+
+    // 关键：裁剪后，图片加载完成时清除选区并重绘
+    img.onload = function () {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      selectionRect = null;
+      draw(false); // 不带虚线
+    };
     img.src = canvas.toDataURL();
-    selectionRect = null;
-    draw();
   };
 
   $scope.addText = function () {
+    draw(false);
+    historyStack.push(canvas.toDataURL());
+    draw();
     let text = prompt("请输入要添加的文字：");
     if (text) {
       ctx.font = "30px Arial";
@@ -107,6 +134,21 @@ angular.module('docs').controller('ImageEdit', function ($scope, $uibModalInstan
 
   $scope.cancel = function () {
     $uibModalInstance.dismiss('cancel');
+  };
+
+  $scope.undo = function () {
+    if (historyStack.length === 0) {
+      alert("没有可回撤的操作！");
+      return;
+    }
+    let lastDataUrl = historyStack.pop();
+    selectionRect = null; // 先清空选区
+    img.onload = function () {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      draw(); // 重新绘制，不带虚线
+    };
+    img.src = lastDataUrl;
   };
 
   function draw(showSelection = true) {

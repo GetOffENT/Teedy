@@ -9,6 +9,7 @@
 /.idea
 /.project
 *.iml
+data
 node_modules
 import_test
 teedy-importer-linux

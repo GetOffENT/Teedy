@@ -3,12 +3,37 @@
   </div>
   <div class="modal-body">
     <canvas id="imageEditorCanvas" style="border:1px solid #ccc; max-width:100%;"></canvas>
-    <p>拖动鼠标选择裁剪区域，然后点击“裁剪”按钮</p>
+    <p>拖动鼠标选择裁剪区域，然后点击"裁剪"按钮</p>
     <p>双击可以输入文字，输入完成后，点击其他地方，文字会自动保存</p>
     <div style="margin-top:10px;">
       <button class="btn btn-default" ng-click="rotate()">旋转90°</button>
       <button class="btn btn-default" ng-click="crop()">裁剪</button>
       <button class="btn btn-default" ng-click="undo()">回撤</button>
+      <button class="btn btn-default" ng-click="applyFilter('grayscale')">灰度</button>
+      <button class="btn btn-default" ng-click="applyFilter('invert')">反色</button>
+      <button class="btn btn-default" ng-click="applyFilter('blur')">模糊</button>
+      <br>
+      <label>亮度
+        <input type="range" min="0" max="2" step="0.01"
+               ng-model="brightness"
+               ng-mousedown="startAdjust()"
+               ng-mouseup="endAdjust()"
+               ng-mousemove="adjustImage()">
+      </label>
+      <label>对比度
+        <input type="range" min="0" max="2" step="0.01"
+               ng-model="contrast"
+               ng-mousedown="startAdjust()"
+               ng-mouseup="endAdjust()"
+               ng-mousemove="adjustImage()">
+      </label>
+      <label>饱和度
+        <input type="range" min="0" max="2" step="0.01"
+               ng-model="saturate"
+               ng-mousedown="startAdjust()"
+               ng-mouseup="endAdjust()"
+               ng-mousemove="adjustImage()">
+      </label>
       <!-- 可拓展更多按钮 -->
     </div>
   </div>

@@ -5,6 +5,12 @@ angular.module('docs').controller('ImageEdit', function ($scope, $uibModalInstan
   let canvas, ctx, img, angle = 0;
   let startX, startY, endX, endY, isSelecting = false, selectionRect = null;
   let historyStack = [];
+  let isAdjusting = false;
+  let adjustBackup = null;
+
+  $scope.brightness = 1;
+  $scope.contrast = 1;
+  $scope.saturate = 1;
 
   $scope.init = function () {
     canvas = document.getElementById('imageEditorCanvas');
@@ -58,7 +64,12 @@ angular.module('docs').controller('ImageEdit', function ($scope, $uibModalInstan
   $scope.rotate = function () {
     // 存历史前，先只画图片本身
     draw(false);
-    historyStack.push(canvas.toDataURL());
+    historyStack.push({
+      dataUrl: canvas.toDataURL(),
+      brightness: $scope.brightness,
+      contrast: $scope.contrast,
+      saturate: $scope.saturate
+    });
     // 画面恢复
     draw();
     angle = (angle + 90) % 360;
@@ -86,7 +97,12 @@ angular.module('docs').controller('ImageEdit', function ($scope, $uibModalInstan
 
   $scope.crop = function () {
     draw(false); // 先只画图片本身到主canvas
-    historyStack.push(canvas.toDataURL());
+    historyStack.push({
+      dataUrl: canvas.toDataURL(),
+      brightness: $scope.brightness,
+      contrast: $scope.contrast,
+      saturate: $scope.saturate
+    });
     draw(); // 恢复带虚线的画面
 
     if (!selectionRect || selectionRect.w === 0 || selectionRect.h === 0) {
@@ -149,7 +165,12 @@ angular.module('docs').controller('ImageEdit', function ($scope, $uibModalInstan
     textarea.onblur = function() {
       if (textarea.value.trim() !== '') {
         draw(false); // 只画图片本身
-        historyStack.push(canvas.toDataURL());
+        historyStack.push({
+          dataUrl: canvas.toDataURL(),
+          brightness: $scope.brightness,
+          contrast: $scope.contrast,
+          saturate: $scope.saturate
+        });
         draw(); // 恢复
         ctx.font = "30px Arial";
         ctx.fillStyle = "red";
@@ -181,14 +202,108 @@ angular.module('docs').controller('ImageEdit', function ($scope, $uibModalInstan
       alert("没有可回撤的操作！");
       return;
     }
-    let lastDataUrl = historyStack.pop();
+    let lastState = historyStack.pop();
     selectionRect = null; // 先清空选区
+    draw(false); // 清空当前canvas内容
     img.onload = function () {
       canvas.width = img.width;
       canvas.height = img.height;
+      // 恢复参数
+      $scope.$apply(function() {
+        $scope.brightness = lastState.brightness;
+        $scope.contrast = lastState.contrast;
+        $scope.saturate = lastState.saturate;
+      });
       draw(); // 重新绘制，不带虚线
     };
-    img.src = lastDataUrl;
+    img.src = lastState.dataUrl;
+  };
+
+  $scope.applyFilter = function(type) {
+    draw(false);
+    historyStack.push({
+      dataUrl: canvas.toDataURL(),
+      brightness: $scope.brightness,
+      contrast: $scope.contrast,
+      saturate: $scope.saturate
+    });
+    draw();
+
+    let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let data = imageData.data;
+
+    if (type === 'grayscale') {
+      for (let i = 0; i < data.length; i += 4) {
+        let avg = (data[i] + data[i+1] + data[i+2]) / 3;
+        data[i] = data[i+1] = data[i+2] = avg;
+      }
+    } else if (type === 'invert') {
+      for (let i = 0; i < data.length; i += 4) {
+        data[i] = 255 - data[i];
+        data[i+1] = 255 - data[i+1];
+        data[i+2] = 255 - data[i+2];
+      }
+    } else if (type === 'blur') {
+      // 简单模糊可用 ctx.filter，但要兼容保存，建议用 stackblur.js 或自定义算法
+      ctx.filter = 'blur(2px)';
+      ctx.drawImage(canvas, 0, 0);
+      ctx.filter = 'none';
+      return;
+    }
+    ctx.putImageData(imageData, 0, 0);
+    img.src = canvas.toDataURL();
+  };
+
+  $scope.startAdjust = function() {
+    if (!isAdjusting) {
+      draw(false);
+      historyStack.push({
+        dataUrl: canvas.toDataURL(),
+        brightness: $scope.brightness,
+        contrast: $scope.contrast,
+        saturate: $scope.saturate
+      });
+      adjustBackup = canvas.toDataURL();
+      isAdjusting = true;
+    }
+  };
+
+  $scope.endAdjust = function() {
+    if (isAdjusting) {
+      // 用 filter 绘制一次到 canvas 上，确保 canvas 是调整后的效果
+      let tempImg = new window.Image();
+      tempImg.onload = function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.filter = `brightness(${$scope.brightness}) contrast(${$scope.contrast}) saturate(${$scope.saturate})`;
+        ctx.drawImage(tempImg, 0, 0, canvas.width, canvas.height);
+        ctx.filter = 'none';
+
+        // 保存到img.src（不再push历史）
+        var dataUrl = canvas.toDataURL();
+        img.onload = function() {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          draw();
+          isAdjusting = false;
+          adjustBackup = null;
+        };
+        img.src = dataUrl;
+      };
+      tempImg.src = adjustBackup;
+    }
+  };
+
+  $scope.adjustImage = function() {
+    if (adjustBackup) {
+      let tempImg = new window.Image();
+      tempImg.onload = function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.filter = `brightness(${$scope.brightness}) contrast(${$scope.contrast}) saturate(${$scope.saturate})`;
+        ctx.drawImage(tempImg, 0, 0, canvas.width, canvas.height);
+        ctx.filter = 'none';
+      };
+      tempImg.src = adjustBackup;
+    }
   };
 
   function draw(showSelection = true) {

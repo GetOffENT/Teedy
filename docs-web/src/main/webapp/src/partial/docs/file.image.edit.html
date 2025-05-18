@@ -1,0 +1,17 @@
+<div class="modal-header">
+    <h3 class="modal-title">图片在线编辑</h3>
+  </div>
+  <div class="modal-body">
+    <canvas id="imageEditorCanvas" style="border:1px solid #ccc; max-width:100%;"></canvas>
+    <p>拖动鼠标选择裁剪区域，然后点击“裁剪”按钮</p>
+    <div style="margin-top:10px;">
+      <button class="btn btn-default" ng-click="rotate()">旋转90°</button>
+      <button class="btn btn-default" ng-click="crop()">裁剪</button>
+      <button class="btn btn-default" ng-click="addText()">添加文字</button>
+      <!-- 可拓展更多按钮 -->
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-primary" ng-click="save()">保存为新版本</button>
+    <button class="btn btn-default" ng-click="cancel()">取消</button>
+  </div>

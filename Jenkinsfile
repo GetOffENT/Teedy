@@ -4,7 +4,7 @@ pipeline {
     environment {
         DEPLOYMENT_NAME = "teedy-deployment"
         CONTAINER_NAME = "teedy-app"
-        IMAGE_NAME = "similar2/teedy-app:36"
+        IMAGE_NAME = "yanko7019/teedy:36"
     PATH = "/opt/homebrew/bin:/usr/local/bin:$PATH"
 
     }

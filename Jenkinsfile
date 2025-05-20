@@ -1,62 +1,72 @@
- pipeline {
+pipeline {
     agent any
+
     environment {
-        // define environment variable
-        // Jenkins credentials configuration
-        DOCKER_HUB_CREDENTIALS = credentials('4') // Docker Hub credentials ID store in Jenkins
-        // Docker Hub Repository's name
-        DOCKER_IMAGE = 'yanko7019/teedy' // your Docker Hub user name and Repository's name
-        DOCKER_TAG = "${env.BUILD_NUMBER}" // use build number as tag
+        DEPLOYMENT_NAME = "teedy-deployment"
+        CONTAINER_NAME = "teedy-app"
+        IMAGE_NAME = "similar2/teedy-app:36"
+    PATH = "/opt/homebrew/bin:/usr/local/bin:$PATH"
+
     }
+
     stages {
-        stage('Build') {
+        stage('Start Minikube') {
             steps {
-                checkout scmGit(
-                    branches: [[name: '*/Jenkins-docker']],
-                    extensions: [],
-                    userRemoteConfigs: [[url: 'https://github.com/GetOffENT/Teedy.git']] // your github Repository
-                )
-                sh 'mvn -B -DskipTests clean package'
+                sh '''
+                echo "[INFO] Checking Minikube status..."
+                if ! minikube status | grep -q "Running"; then
+                    echo "[INFO] Minikube not running. Starting now..."
+                    minikube start
+                else
+                    echo "[INFO] Minikube is already running."
+                fi
+                '''
             }
         }
-        // Building Docker images
-        stage('Building image') {
+
+        stage('Load Docker Image') {
             steps {
-                script {
-                    // assume Dockerfile locate at root
-                    docker.build("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}")
-                }
+                sh '''
+                echo "[INFO] Loading local Docker image into Minikube..."
+                minikube image load ${IMAGE_NAME}
+                '''
             }
         }
-        // Uploading Docker images into Docker Hub
-        stage('Upload image') {
+
+        stage('Deploy to K8s') {
             steps {
-                script {
-                    // sign in Docker Hub
-                    docker.withRegistry('https://registry.hub.docker.com','4') {
-                        // push image
-                        docker.image("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}").push()
-                        // ：optional: label latest
-                        docker.image("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}").push('latest')
-                    }
-                }
-             }
-         }
-         // Running Docker container
-         stage('Run containers') {
-             steps {
-                 script {
-                 // stop then remove containers if exists
-                 sh 'docker stop teedy-container-8081 || true'
-                 sh 'docker rm teedy-container-8081 || true'
-                 // run Container
-                 docker.image("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}").run(
-                 '--name teedy-container-8081 -d -p 8081:8080'
-                 )
-                 // Optional: list all teedy-containers
-                 sh 'docker ps --filter "name=teedy-container"'
-                 }
-             }
+                sh '''
+                echo "[INFO] Updating Kubernetes deployment with new image..."
+                kubectl set image deployment/${DEPLOYMENT_NAME} ${CONTAINER_NAME}=${IMAGE_NAME} --record
+                '''
+            }
         }
-     }
- }
+
+        stage('Verify Deployment') {
+            steps {
+                sh '''
+                echo "[INFO] Waiting for rollout to finish..."
+                kubectl rollout status deployment/${DEPLOYMENT_NAME}
+
+                echo "[INFO] Current pods:"
+                kubectl get pods
+
+                echo "[INFO] Exposing service (if not already exposed)..."
+                kubectl expose deployment ${DEPLOYMENT_NAME} --type=LoadBalancer --port=8080 --target-port=8080 || true
+
+                echo "[INFO] Minikube service info:"
+                minikube service ${DEPLOYMENT_NAME} --url
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "[SUCCESS] Teedy deployed to K8s!"
+        }
+        failure {
+            echo "[FAILURE] Deployment failed."
+        }
+    }
+}
